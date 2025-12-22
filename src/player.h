@@ -13,6 +13,9 @@ public:
 
     void update();
     void draw();
+    Vector2 getPlayerPos();
+    float getPlayerRotation();
+    void shoot();
 
 private:
     Vector2 position;
@@ -20,11 +23,14 @@ private:
     float rotation;
     float scale;
 
+
     // ANIM DATA
     std::vector<Texture2D> idleTextures;
+    std::vector<Texture2D> shootTextures;
     int currentFrame;
     float frameTimer;
     float frameSpeed;
+    bool isShooting;
 };
 
 #endif

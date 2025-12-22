@@ -9,11 +9,13 @@ Player::Player(float x, float y)
     speed = 200.0f;
     rotation = 0.0f;
     scale = 0.25f;
+    isShooting = false;
 
     currentFrame = 0;
     frameTimer = 0.0f;
     frameSpeed = 0.05f;
 
+    // idle textures
     for (int i = 0; i < 20; i++)
     {
 
@@ -23,6 +25,17 @@ Player::Player(float x, float y)
         Texture2D texture = LoadTexture(fileName.c_str());
         idleTextures.push_back(texture);
     }
+
+    // shooting textures
+    for (int i = 0; i < 3; i++)
+    {
+
+        std::string fileName = "assets/playerRifle/shoot/survivor-shoot_rifle_" + std::to_string(i) +
+                               ".png";
+
+        Texture2D texture = LoadTexture(fileName.c_str());
+        shootTextures.push_back(texture);
+    }
 }
 
 Player::~Player()
@@ -31,6 +44,22 @@ Player::~Player()
     for (Texture2D texture : idleTextures)
     {
         UnloadTexture(texture);
+    }
+
+    for (Texture2D texture : shootTextures)
+    {
+        UnloadTexture(texture);
+    }
+
+}
+
+void Player::shoot()
+{
+    if (!isShooting) 
+    {
+        isShooting = true;
+        currentFrame = 0; // start shoot anim from beginning
+        frameTimer = 0.0f;
     }
 }
 
@@ -50,15 +79,26 @@ void Player::update()
 
     frameTimer += deltaTime;
 
-    if (frameTimer >= frameSpeed){
-        
+    frameTimer += deltaTime;
+
+    // pick the correct set of images
+    std::vector<Texture2D>& currentAnim = isShooting ? shootTextures : idleTextures;
+
+    if (frameTimer >= frameSpeed)
+    {
         frameTimer = 0.0f;
         currentFrame++;
 
-        // loop back
-        if (currentFrame >= idleTextures.size()) 
+        if (currentFrame >= currentAnim.size())
         {
-            currentFrame = 0;
+            // if finished the shoot animation, go back to idle
+            if (isShooting) {
+                isShooting = false;
+                currentFrame = 0;
+            } else {
+                // loop idle
+                currentFrame = 0;
+            }
         }
     }
 
@@ -78,7 +118,10 @@ void Player::update()
 
 void Player::draw()
 {
-    Texture2D currentTexture = idleTextures[currentFrame];
+
+    std::vector<Texture2D>& currentAnim = isShooting ? shootTextures : idleTextures;
+
+    Texture2D currentTexture = currentAnim[currentFrame];
 
     // the part of the image we want to use
     //    x: 0, y: 0, width: image width, height: image height
@@ -95,4 +138,12 @@ void Player::draw()
     Vector2 origin = { dest.width / 2, dest.height / 2 };
 
     DrawTexturePro(currentTexture, source, dest, origin, rotation, WHITE);
+}
+
+Vector2 Player::getPlayerPos(){
+    return {position.x, position.y};
+}
+
+float Player::getPlayerRotation(){
+    return rotation;
 }

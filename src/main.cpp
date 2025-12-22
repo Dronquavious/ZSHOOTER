@@ -1,32 +1,13 @@
-#include "raylib.h"
-#include "player.h"
+#include "game.h"
 
 int main()
 {
-    const int screenDimension[] = { 1280, 720 };
-
-    InitWindow(screenDimension[0], screenDimension[1], "ZombieAttack");
-
+    InitWindow(1280, 720, "ZombieAttack");
     SetTargetFPS(150);
 
-    // player stuff
-    Player dron(100.0f,100.0f);
+    Game game;
+    game.run(); 
 
-    while (!WindowShouldClose())
-    {
-
-        dron.update();
-
-        float deltaTime = GetFrameTime();
-
-        ClearBackground(RAYWHITE);
-        BeginDrawing();
-
-        dron.draw();
-        
-        EndDrawing();
-    }
-    CloseWindow(); 
-
+    CloseWindow();
     return 0;
 }
