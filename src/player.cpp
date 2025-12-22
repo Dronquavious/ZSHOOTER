@@ -1,5 +1,6 @@
 #include "player.h"
 #include <string>
+#include <cmath>
 
 Player::Player(float x, float y)
 {
@@ -7,6 +8,7 @@ Player::Player(float x, float y)
     position.y = y;
     speed = 200.0f;
     rotation = 0.0f;
+    scale = 0.25f;
 
     currentFrame = 0;
     frameTimer = 0.0f;
@@ -59,9 +61,38 @@ void Player::update()
             currentFrame = 0;
         }
     }
+
+
+    //------ LOOKING AT MOUSE ROTATION LOGIC -----
+    
+    Vector2 mousePos = GetMousePosition();
+
+    float dx = mousePos.x - position.x;
+    float dy = mousePos.y - position.y;
+
+    float angleRad = atan2(dy,dx);
+
+    rotation = angleRad * RAD2DEG;
+
 }
 
 void Player::draw()
 {
-    DrawTexture(idleTextures[currentFrame],(int)position.x, (int)position.y, WHITE);
+    Texture2D currentTexture = idleTextures[currentFrame];
+
+    // the part of the image we want to use
+    //    x: 0, y: 0, width: image width, height: image height
+    Rectangle source = { 0, 0, (float)currentTexture.width, (float)currentTexture.height };
+
+    // where on the screen it should be
+    //    x: position.x, y: position.y
+    //    width: image width * scale, height: image height * scale
+    Rectangle dest = { position.x, position.y, currentTexture.width * scale, currentTexture.height * scale };
+
+    // pivot points
+    //    if we leave this at (0,0), the player will rotate around their top-left corner.
+    //    We want the center, so we take half the destination width/height.
+    Vector2 origin = { dest.width / 2, dest.height / 2 };
+
+    DrawTexturePro(currentTexture, source, dest, origin, rotation, WHITE);
 }

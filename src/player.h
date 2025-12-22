@@ -18,6 +18,7 @@ private:
     Vector2 position;
     float speed;
     float rotation;
+    float scale;
 
     // ANIM DATA
     std::vector<Texture2D> idleTextures;

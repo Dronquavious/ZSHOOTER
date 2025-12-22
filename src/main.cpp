@@ -19,13 +19,11 @@ int main()
 
         float deltaTime = GetFrameTime();
 
-        ClearBackground(RED);
+        ClearBackground(RAYWHITE);
         BeginDrawing();
 
         dron.draw();
         
-        
-
         EndDrawing();
     }
     CloseWindow(); 
