@@ -1,0 +1,132 @@
+#include "zombie.h"
+#include <cmath>
+
+Zombie::Zombie(float x, float y)
+{
+
+    position.x = x;
+    position.y = y;
+    speed = 100.0f;
+    rotation = 0.0f;
+    scale = 0.25f;
+    isAttacking = false;
+
+    currentFrame = 0;
+    frameTimer = 0.0f;
+    frameSpeed = 0.1f;
+
+    // zombie textures
+
+    // walk
+    for (int i = 0; i < 17; i++)
+    {
+
+        std::string fileName = "assets/zombie/walk/skeleton-move_" + std::to_string(i) +
+                               ".png";
+
+        Texture2D texture = LoadTexture(fileName.c_str());
+        walkTextures.push_back(texture);
+    }
+
+    // attack
+    for (int i = 0; i < 9; i++)
+    {
+
+        std::string fileName = "assets/zombie/attack/skeleton-attack_" + std::to_string(i) +
+                               ".png";
+
+        Texture2D texture = LoadTexture(fileName.c_str());
+        attackTextures.push_back(texture);
+    }
+}
+
+Zombie::~Zombie()
+{
+
+    // unloading texttures
+    for (Texture2D texture : walkTextures)
+    {
+        UnloadTexture(texture);
+    }
+
+    for (Texture2D texture : attackTextures)
+    {
+        UnloadTexture(texture);
+    }
+}
+
+void Zombie::update(Vector2 playerPos)
+{
+    float dt = GetFrameTime();
+
+    // vector to player
+    float dx = playerPos.x - position.x;
+    float dy = playerPos.y - position.y;
+
+    // angle to face player
+    rotation = atan2(dy, dx) * RAD2DEG;
+
+    float distance = sqrt(dx * dx + dy * dy);
+
+    // if we are > 30 pixels run, vice versa attack
+    if (distance > 30.0f)
+    {
+        isAttacking = false;
+
+        // normalize the vector so we move at constant speed
+        float dirX = dx / distance;
+        float dirY = dy / distance;
+
+        position.x += dirX * speed * dt;
+        position.y += dirY * speed * dt;
+    }
+    else
+    {
+        // we are close start attacking
+        isAttacking = true;
+    }
+
+    // --- ANIM LOGIC ---
+
+    frameTimer += dt;
+    // choose which list to use based on state
+    std::vector<Texture2D>& currentAnim = isAttacking ? attackTextures : walkTextures;
+
+    if (frameTimer >= 0.1f) // 0.1f = 10 frames per second
+    {
+        frameTimer = 0.0f;
+        currentFrame++;
+        
+        // loop the animation
+        if (currentFrame >= currentAnim.size())
+        {
+            currentFrame = 0;
+        }
+    }
+}
+
+void Zombie::draw()
+{
+
+    std::vector<Texture2D>& currentAnim = isAttacking ? attackTextures : walkTextures;
+    
+    // make sure we dont crash if frame is too high
+    if (currentFrame >= currentAnim.size()) currentFrame = 0;
+
+    Texture2D currentTexture = currentAnim[currentFrame];
+
+    Rectangle source = { 0, 0, (float)currentTexture.width, (float)currentTexture.height };
+    Rectangle dest = { position.x, position.y, currentTexture.width * scale, currentTexture.height * scale };
+    Vector2 origin = { dest.width / 2, dest.height / 2 };
+
+    DrawTexturePro(currentTexture, source, dest, origin, rotation, WHITE);
+    
+    // Debug:  collision box to see where it is
+    // DrawRectangleLinesEx(getCollisionRect(), 2, RED); 
+}
+
+Rectangle Zombie::GetCollisionRect()
+{
+    // a simple box centered on the zombie
+    return { position.x - 20, position.y - 20, 40, 40 };
+}

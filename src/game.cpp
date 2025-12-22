@@ -12,15 +12,24 @@ Game::Game()
     gunOffset = 35.0f;
     sideOffset = 15.0f;
 
+
     // camera
     camera.offset = {1280.0f / 2.0f, 720.0f / 2.0f};
     camera.target = player.getPlayerPos();
     camera.rotation = 0.0f;
-    camera.zoom = 1.0f;
+    camera.zoom = 2.0f;
+
+    // Zombie TEST
+    zombies.push_back(new Zombie(500.0f, 500.0f));
 }
 
 Game::~Game()
 {
+    for (Zombie* z : zombies)
+    {
+        delete z;
+    }
+    zombies.clear();
 }
 
 void Game::run()
@@ -35,8 +44,6 @@ void Game::run()
 
 void Game::update()
 {
-
-
 
     float dt = GetFrameTime();
     shootTimer += dt;
@@ -74,6 +81,12 @@ void Game::update()
         b.update();
     }
 
+    // zombies
+    for (Zombie* z : zombies)
+    {
+        z->update(player.getPlayerPos());
+    }
+
     // --- DELETE DEAD BULLETS ---
     bullets.erase(std::remove_if(bullets.begin(), bullets.end(),
                                  [](const Bullet &b)
@@ -83,6 +96,8 @@ void Game::update()
 
     // CAMERA LOGIC
     camera.target = player.getPlayerPos();
+
+
 }
 
 void Game::draw()
@@ -97,6 +112,11 @@ void Game::draw()
     DrawRectangle(0, 0, 1280, 720, GRAY); // Draw the "original" screen box for reference
 
     player.draw();
+
+    for (Zombie* z : zombies)
+        {
+            z->draw();
+        }
 
     for (Bullet &b : bullets)
     {
