@@ -1,0 +1,12 @@
+# mac sys files
+.DS_Store
+
+# settings
+.vscode/
+
+# compiled executable
+src/main
+*.o
+
+# raylib src
+raylib/
