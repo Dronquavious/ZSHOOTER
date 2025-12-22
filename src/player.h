@@ -11,7 +11,7 @@ public:
     Player(float x, float y);
     ~Player();
 
-    void update();
+    void update(Vector2 mousePos);
     void draw();
     Vector2 getPlayerPos();
     float getPlayerRotation();

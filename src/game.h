@@ -26,6 +26,7 @@ private:
     float fireRate;
     float gunOffset;
     float sideOffset;
+    Camera2D camera;
 };
 
 #endif

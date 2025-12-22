@@ -63,7 +63,7 @@ void Player::shoot()
     }
 }
 
-void Player::update()
+void Player::update(Vector2 mousePos)
 {
     float deltaTime = GetFrameTime();
 
@@ -105,7 +105,6 @@ void Player::update()
 
     //------ LOOKING AT MOUSE ROTATION LOGIC -----
     
-    Vector2 mousePos = GetMousePosition();
 
     float dx = mousePos.x - position.x;
     float dy = mousePos.y - position.y;

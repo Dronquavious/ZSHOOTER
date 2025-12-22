@@ -18,8 +18,8 @@ void Bullet::update()
     position.y += speed * sin(rotation * DEG2RAD) * GetFrameTime();
     
     // if bullet too far offscreen delete it
-    if (position.x > 1500 || position.x < -200 ||
-        position.y > 1000 || position.y < -200)
+    if (position.x > 6000 || position.x < -6000 ||
+        position.y > 6000 || position.y < -6000)
     {
         active = false;
     }
