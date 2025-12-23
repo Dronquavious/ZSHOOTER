@@ -10,8 +10,8 @@ Player::Player(float x, float y)
     rotation = 0.0f;
     scale = 0.25f;
     isShooting = false;
-    maxAmmo = 30;
-    currentAmmo = 30;
+    maxAmmo = 45;
+    currentAmmo = 45;
     isReloading = false;
     health = 100;
 
@@ -97,8 +97,6 @@ void Player::update(Vector2 mousePos)
     if (IsKeyDown(KEY_D))
         position.x += speed * deltaTime; // Move right
 
-    if (IsKeyPressed(KEY_R))
-        reload(); // reload input
 
     // -- -ANIMATION STATE MACHINE-- -
     frameTimer += deltaTime;
@@ -244,7 +242,7 @@ void Player::reset()
 {
     position = {100.0f, 100.0f};
     health = 100;
-    currentAmmo = 30;
+    currentAmmo = 45;
     isShooting = false;
     isReloading = false;
 }

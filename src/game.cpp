@@ -6,6 +6,17 @@ Game::Game()
     : player(100.0f, 100.0f)
 {
 
+    InitAudioDevice();
+    shootSound = LoadSound("assets/sounds/rifle-single.wav");
+    reloadSound = LoadSound("assets/sounds/rifle-reload2.wav");
+
+    footstepSound = LoadSound("assets/sounds/step-dirt.ogg");
+
+    // lower volume
+    SetSoundVolume(footstepSound, 0.4f);
+
+    footstepTimer = 0.0f;
+
     backgroundTexture = LoadTexture("assets/map/backround.png");
 
     muzzleFlashTexture = LoadTexture("assets/effects/bullet2.png"); // the flash
@@ -15,10 +26,12 @@ Game::Game()
 
     // init shooting vars
     shootTimer = 0.0f;
-    fireRate = 0.2f;
+    fireRate = 0.09f;
     gunOffset = 35.0f;
     sideOffset = 15.0f;
     noAmmoTimer = 0.0f;
+    score = 0;
+    shakeTimer = 0;
 
     // camera
     camera.offset = {1280.0f / 2.0f, 720.0f / 2.0f};
@@ -32,15 +45,15 @@ Game::Game()
 
     // Zombie TEST
     int hordeSize = 50; // change this to 100 or 200 if you are brave
-    
+
     for (int i = 0; i < hordeSize; i++)
     {
         // pick a random direction
         float angle = GetRandomValue(0, 360) * DEG2RAD;
-        
+
         // pick a random distance (Far enough to be safe, close enough to be scary)
-        float distance = GetRandomValue(600, 1200); 
-        
+        float distance = GetRandomValue(600, 1200);
+
         // calculate position relative to player start (100, 100)
         float spawnX = 100.0f + cos(angle) * distance;
         float spawnY = 100.0f + sin(angle) * distance;
@@ -61,6 +74,11 @@ Game::~Game()
     UnloadTexture(muzzleFlashTexture);
     UnloadTexture(hitTexture);
     UnloadTexture(deadBodyTexture);
+
+    CloseAudioDevice();
+    UnloadSound(shootSound);
+    UnloadSound(reloadSound);
+    UnloadSound(footstepSound);
 }
 
 void Game::run()
@@ -103,6 +121,31 @@ void Game::update()
         }
     }
 
+    // --- FOOTSTEP LOGIC ---
+    bool isMoving = IsKeyDown(KEY_W) || IsKeyDown(KEY_S) || IsKeyDown(KEY_A) || IsKeyDown(KEY_D);
+
+    if (isMoving && !player.isReloadingState()) // dont play steps if we are frozen reloading
+    {
+        footstepTimer -= dt;
+
+        if (footstepTimer <= 0.0f)
+        {
+            // PLAY SOUND
+            // randomize pitch slightly so it doesn't sound like a robot
+            SetSoundPitch(footstepSound, (float)GetRandomValue(90, 110) / 100.0f);
+            PlaySound(footstepSound);
+
+            // RESET TIMER
+            // 0.30f = Run speed (approx 3 steps per second)
+            footstepTimer = 0.30f;
+        }
+    }
+    else
+    {
+        // reset so the first step plays instantly when you start moving again
+        footstepTimer = 0.0f;
+    }
+
     shootTimer += dt;
 
     Vector2 mouseWorldPos = GetScreenToWorld2D(GetMousePosition(), camera);
@@ -114,7 +157,7 @@ void Game::update()
     {
         zombieSpawnTimer = 0.0f; // reset timer
 
-        // arandom angle (0 to 360 degrees)
+        // a random angle (0 to 360 degrees)
         int angleDeg = GetRandomValue(0, 360);
         float angleRad = angleDeg * DEG2RAD;
 
@@ -129,8 +172,11 @@ void Game::update()
         // create the Zombie
         zombies.push_back(new Zombie(spawnX, spawnY));
 
-        // Optional: Make the game harder over time
-        if (zombieSpawnRate > 0.5f) zombieSpawnRate -= 0.01f;
+        // decrease spawn rate (make it faster) but dont go below 0.2 seconds
+        if (zombieSpawnRate > 0.2f)
+        {
+            zombieSpawnRate -= 0.05f;
+        }
     }
 
     // --- SHOOTING LOGIC ---
@@ -142,6 +188,9 @@ void Game::update()
             shootTimer = 0.0f;
 
             player.shoot();
+            PlaySound(shootSound);
+            // when you shoot or take damage:
+            shakeTimer = 0.2f; // shake for 0.2 seconds
 
             // calculate Spawn
             Vector2 pPos = player.getPlayerPos();
@@ -156,7 +205,7 @@ void Game::update()
 
             // --- SPAWN MUZZLE FLASH ---
             Decal flash;
-            float extraPush = 20.0f; 
+            float extraPush = 20.0f;
             flash.position.x = spawnX + (forward.x * extraPush);
             flash.position.y = spawnY + (forward.y * extraPush);
             flash.onTop = true;
@@ -183,8 +232,18 @@ void Game::update()
         noAmmoTimer -= dt;
     }
 
+    if (IsKeyPressed(KEY_R))
+    {
+        // only play sound if we actually start reloading
+        if (!player.isReloadingState() && player.getAmmo() < 45)
+        {
+            player.reload();
+            PlaySound(reloadSound);
+        }
+    }
+
     // check if player tries to shoot with empty mag
-    if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
+    if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT) || IsMouseButtonDown(MOUSE_BUTTON_LEFT))
     {
         if (player.getAmmo() <= 0 && !player.isReloadingState())
         {
@@ -254,6 +313,8 @@ void Game::update()
     {
         if (!(*it)->active) // if zombie is dead
         {
+
+            score += 100;
             // --- SPAWN DEAD BODY ---
             Decal body;
             body.onTop = false;
@@ -298,6 +359,19 @@ void Game::draw()
 {
     BeginDrawing();
     ClearBackground(RAYWHITE);
+
+    if (shakeTimer > 0)
+    {
+        float intensity = 3.0f; // how violent the shake is
+        camera.offset.x = (1280 / 2) + GetRandomValue(-intensity, intensity);
+        camera.offset.y = (720 / 2) + GetRandomValue(-intensity, intensity);
+        shakeTimer -= GetFrameTime();
+    }
+    else
+    {
+        // reset to center
+        camera.offset = {1280.0f / 2.0f, 720.0f / 2.0f};
+    }
 
     BeginMode2D(camera);
 
@@ -399,8 +473,14 @@ void Game::draw()
         DrawText(TextFormat("Health: %i", player.getHealth()), 20, 20, 20, RED);
 
         // draw Ammo (Below Health)
-        std::string ammoText = "Ammo: " + std::to_string(player.getAmmo()) + " / 30";
+        std::string ammoText = "Ammo: " + std::to_string(player.getAmmo()) + " / 45";
         DrawText(ammoText.c_str(), 20, 50, 20, YELLOW);
+
+        // draw score
+        // top Right Corner, subtract the text width from 1260 to keep it right allin
+        const char *scoreText = TextFormat("Score: %i", score);
+        int scoreWidth = MeasureText(scoreText, 20);
+        DrawText(scoreText, 1280 - scoreWidth - 20, 20, 20, WHITE);
 
         // RELOAD TEXT (Big, Center Bottom)
         if (player.isReloadingState())

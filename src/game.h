@@ -7,13 +7,14 @@
 #include "zombie.h"
 #include <vector>
 
-struct Decal {
+struct Decal
+{
     Vector2 position;
     float rotation;
     float scale;
     Texture2D texture;
-    float lifeTime; 
-    float maxLife;  
+    float lifeTime;
+    float maxLife;
     bool onTop;
 };
 
@@ -31,7 +32,9 @@ private:
     bool gameOver;
     void resetGame();
 
-    Player player;                 // game owns player
+    Player player; // game owns player
+    Sound footstepSound;
+    float footstepTimer;
     std::vector<Bullet> bullets;   // game owns bullets
     std::vector<Zombie *> zombies; // game owns zombies
     std::vector<Decal> decals;
@@ -43,6 +46,10 @@ private:
     float gunOffset;
     float sideOffset;
     float noAmmoTimer;
+    Sound shootSound;
+    Sound reloadSound;
+    float shakeTimer;
+    int score;
 
     // cam
     Camera2D camera;
