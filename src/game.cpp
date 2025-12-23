@@ -31,7 +31,22 @@ Game::Game()
     zombieSpawnRate = 2.0f; // Spawn every 2 seconds
 
     // Zombie TEST
-    zombies.push_back(new Zombie(400.0f, 400.0f));
+    int hordeSize = 50; // change this to 100 or 200 if you are brave
+    
+    for (int i = 0; i < hordeSize; i++)
+    {
+        // pick a random direction
+        float angle = GetRandomValue(0, 360) * DEG2RAD;
+        
+        // pick a random distance (Far enough to be safe, close enough to be scary)
+        float distance = GetRandomValue(600, 1200); 
+        
+        // calculate position relative to player start (100, 100)
+        float spawnX = 100.0f + cos(angle) * distance;
+        float spawnY = 100.0f + sin(angle) * distance;
+
+        zombies.push_back(new Zombie(spawnX, spawnY));
+    }
 }
 
 Game::~Game()
