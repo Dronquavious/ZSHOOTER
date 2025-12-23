@@ -115,7 +115,7 @@ void Game::update()
         zombies.push_back(new Zombie(spawnX, spawnY));
 
         // Optional: Make the game harder over time
-        // if (zombieSpawnRate > 0.5f) zombieSpawnRate -= 0.01f;
+        if (zombieSpawnRate > 0.5f) zombieSpawnRate -= 0.01f;
     }
 
     // --- SHOOTING LOGIC ---

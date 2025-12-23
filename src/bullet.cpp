@@ -28,5 +28,5 @@ void Bullet::update()
 
 void Bullet::draw()
 {
-    DrawCircle((int)position.x, (int)position.y, 5, RED);
+    //DrawCircle((int)position.x, (int)position.y, 5, RED);
 }
