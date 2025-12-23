@@ -1,6 +1,8 @@
 # 🧟 Zombie Survival Shooter
 
-![Game Preview](https://github.com/user-attachments/assets/9d7e8036-c855-4b3a-ad2a-56e737daa4d5)
+## Game Preview
+
+https://github.com/user-attachments/assets/9d7e8036-c855-4b3a-ad2a-56e737daa4d5
 
 A fast-paced, top-down survival shooter built with **C++** and **Raylib**. Fight off endless hordes of the undead, manage your ammo, and survive as long as you can!
 
