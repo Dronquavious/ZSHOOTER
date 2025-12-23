@@ -3,6 +3,7 @@
 
 #include "raylib.h"
 #include <vector>
+#include "player.h"
 
 class Zombie
 {
@@ -11,7 +12,7 @@ public:
     Zombie(float x, float y);
     ~Zombie();
 
-    void update(Vector2 playerPos, std::vector<Zombie*>& zombies);
+    void update(Player& player, std::vector<Zombie*>& zombies);
     void draw();
     Rectangle GetCollisionRect();
     bool takeDamage(int damage);
@@ -23,6 +24,7 @@ private:
     float rotation;
     float scale;
     int health;
+    float attackTimer;
 
     // ANIM DATA
     std::vector<Texture2D> walkTextures;

@@ -19,12 +19,16 @@ public:
     void reload(); // starts the reload process
     int getAmmo();
     bool isReloadingState();
+    int getHealth();
+    void takeDamage(int damage);
+    void reset();
 
 private:
     Vector2 position;
     float speed;
     float rotation;
     float scale;
+    int health;
 
     int maxAmmo;
     int currentAmmo;

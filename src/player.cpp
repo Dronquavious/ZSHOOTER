@@ -13,6 +13,7 @@ Player::Player(float x, float y)
     maxAmmo = 30;
     currentAmmo = 30;
     isReloading = false;
+    health = 100;
 
     currentFrame = 0;
     frameTimer = 0.0f;
@@ -227,4 +228,23 @@ bool Player::isReloadingState()
 int Player::getAmmo()
 {
     return currentAmmo;
+}
+
+int Player::getHealth() 
+{ 
+    return health; 
+}
+
+void Player::takeDamage(int damage)
+{
+    health -= damage;
+}
+
+void Player::reset()
+{
+    position = {100.0f, 100.0f};
+    health = 100;
+    currentAmmo = 30;
+    isShooting = false;
+    isReloading = false;
 }

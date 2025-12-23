@@ -10,19 +10,22 @@
 class Game
 {
 public:
-    Game(); 
+    Game();
     ~Game();
 
-    void run(); 
+    void run();
 
 private:
-    void update(); 
-    void draw();   
+    void update();
+    void draw();
+    bool gameOver;
+    void resetGame();
 
-    Player player; // game owns player
-    std::vector<Bullet> bullets; // game owns bullets
-    std::vector<Zombie*> zombies; // game owns zombies
-    
+    Player player;                 // game owns player
+    std::vector<Bullet> bullets;   // game owns bullets
+    std::vector<Zombie *> zombies; // game owns zombies
+    Texture2D backgroundTexture;
+
     // Shooting Settings
     float shootTimer;
     float fireRate;
@@ -31,6 +34,11 @@ private:
 
     // cam
     Camera2D camera;
+
+    // zomb
+    float zombieSpawnTimer;
+    float zombieSpawnRate;
+    
 };
 
 #endif

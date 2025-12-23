@@ -57,9 +57,11 @@ Zombie::~Zombie()
     }
 }
 
-void Zombie::update(Vector2 playerPos, std::vector<Zombie*>& zombies)
+void Zombie::update(Player& player, std::vector<Zombie*>& zombies)
 {
     float dt = GetFrameTime();
+
+    Vector2 playerPos = player.getPlayerPos();
 
     // vector to player
     float dx = playerPos.x - position.x;
@@ -86,6 +88,12 @@ void Zombie::update(Vector2 playerPos, std::vector<Zombie*>& zombies)
     {
         // we are close start attacking
         isAttacking = true;
+        attackTimer += dt;
+        if (attackTimer >= 1.0f) // bite every 1.0 seconds
+        {
+            player.takeDamage(10); // Ouch!
+            attackTimer = 0.0f;    // reset timer
+        }
     }
 
     // --- SEPARATION LOGIC (The Shove) ---
