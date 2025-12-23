@@ -20,10 +20,6 @@ Game::Game()
 
     // Zombie TEST
     zombies.push_back(new Zombie(400.0f, 400.0f));
-    zombies.push_back(new Zombie(300.0f, 300.0f));
-    zombies.push_back(new Zombie(500.0f, 500.0f));
-    zombies.push_back(new Zombie(100.0f, 100.0f));
-    zombies.push_back(new Zombie(200.0f, 200.0f));
     
 }
 
@@ -58,8 +54,8 @@ void Game::update()
     // --- SHOOTING LOGIC ---
     if (IsMouseButtonDown(MOUSE_BUTTON_LEFT))
     {
-        if (shootTimer >= fireRate)
-        {
+        if (shootTimer >= fireRate && !player.isReloadingState() && player.getAmmo() > 0)
+    {
             // reset timer
             shootTimer = 0.0f;
 
@@ -77,6 +73,7 @@ void Game::update()
             float spawnY = pPos.y + (forward.y * gunOffset) + (right.y * sideOffset);
 
             bullets.push_back(Bullet(spawnX, spawnY, rot));
+
         }
     }
 
@@ -110,6 +107,8 @@ void Game::update()
             }
         }
     }
+
+    
 
     for (Zombie *z : zombies)
     {
@@ -167,8 +166,24 @@ void Game::draw()
 
     EndMode2D();
 
+    
+
     // UI HERE (Score, Ammo) FOR TESTING
     DrawText("Health: 100", 20, 20, 20, RED);
+
+    if (player.isReloadingState())
+    {
+        // draw centered red text
+        DrawText("RELOADING...", 500, 600, 40, RED);
+    }
+    else
+    {
+        // create the string "Ammo: X / 30"
+        std::string ammoText = "Ammo: " + std::to_string(player.getAmmo()) + " / 30";
+        
+        // draw it in yellow just below the health
+        DrawText(ammoText.c_str(), 20, 50, 20, YELLOW);
+    }
 
     EndDrawing();
 }

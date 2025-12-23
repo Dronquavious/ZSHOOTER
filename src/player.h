@@ -16,6 +16,9 @@ public:
     Vector2 getPlayerPos();
     float getPlayerRotation();
     void shoot();
+    void reload(); // starts the reload process
+    int getAmmo();
+    bool isReloadingState();
 
 private:
     Vector2 position;
@@ -23,6 +26,12 @@ private:
     float rotation;
     float scale;
 
+    int maxAmmo;
+    int currentAmmo;
+
+    // reload animation
+    std::vector<Texture2D> reloadTextures;
+    bool isReloading;
 
     // ANIM DATA
     std::vector<Texture2D> idleTextures;

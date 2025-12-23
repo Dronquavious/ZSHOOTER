@@ -10,6 +10,9 @@ Player::Player(float x, float y)
     rotation = 0.0f;
     scale = 0.25f;
     isShooting = false;
+    maxAmmo = 30;
+    currentAmmo = 30;
+    isReloading = false;
 
     currentFrame = 0;
     frameTimer = 0.0f;
@@ -36,6 +39,17 @@ Player::Player(float x, float y)
         Texture2D texture = LoadTexture(fileName.c_str());
         shootTextures.push_back(texture);
     }
+
+    // reload
+    for (int i = 0; i < 20; i++)
+    {
+
+        std::string fileName = "assets/playerRifle/reload/survivor-reload_rifle_" + std::to_string(i) +
+                               ".png";
+
+        Texture2D texture = LoadTexture(fileName.c_str());
+        reloadTextures.push_back(texture);
+    }
 }
 
 Player::~Player()
@@ -50,6 +64,11 @@ Player::~Player()
     {
         UnloadTexture(texture);
     }
+
+    for (Texture2D texture : reloadTextures)
+    {
+        UnloadTexture(texture);
+    }
 }
 
 void Player::shoot()
@@ -59,6 +78,7 @@ void Player::shoot()
         isShooting = true;
         currentFrame = 0; // start shoot anim from beginning
         frameTimer = 0.0f;
+        currentAmmo--;
     }
 }
 
@@ -76,27 +96,56 @@ void Player::update(Vector2 mousePos)
     if (IsKeyDown(KEY_D))
         position.x += speed * deltaTime; // Move right
 
+    if (IsKeyPressed(KEY_R))
+        reload(); // reload input
+
+    // -- -ANIMATION STATE MACHINE-- -
     frameTimer += deltaTime;
 
-    // pick the correct set of images
-    std::vector<Texture2D> &currentAnim = isShooting ? shootTextures : idleTextures;
+    // which animation list to use
+    std::vector<Texture2D> *currentAnim = &idleTextures; // default to idle
 
+    if (isReloading)
+    {
+        currentAnim = &reloadTextures;
+        frameSpeed = 0.1f; // SLOWER: 1 frame every 0.15 seconds
+    }
+    else if (isShooting)
+    {
+        currentAnim = &shootTextures;
+        frameSpeed = 0.05f; // FASTER: 1 frame every 0.05 seconds
+    }
+    else
+    {
+        currentAnim = &idleTextures; // idle
+        frameSpeed = 0.1f;           // nORMAL
+    }
+
+    // advance Frame
     if (frameTimer >= frameSpeed)
     {
         frameTimer = 0.0f;
         currentFrame++;
 
-        if (currentFrame >= currentAnim.size())
+        // loop or end logic
+        if (currentFrame >= currentAnim->size())
         {
-            // if finished the shoot animation, go back to idle
-            if (isShooting)
+            // RELOAD FINISHED
+            if (isReloading)
+            {
+                isReloading = false;
+                currentAmmo = maxAmmo; // refill bullets!
+                currentFrame = 0;
+            }
+            // SHOOT FINISHED
+            else if (isShooting)
             {
                 isShooting = false;
                 currentFrame = 0;
             }
+            // IDLE LOOP
             else
             {
-                // loop idle
                 currentFrame = 0;
             }
         }
@@ -115,9 +164,23 @@ void Player::update(Vector2 mousePos)
 void Player::draw()
 {
 
-    std::vector<Texture2D> &currentAnim = isShooting ? shootTextures : idleTextures;
+    // PICK THE CORRECT ANIMATION LIST
+    std::vector<Texture2D>* currentAnim = &idleTextures; // default
 
-    Texture2D currentTexture = currentAnim[currentFrame];
+    if (isReloading)
+    {
+        currentAnim = &reloadTextures;
+    }
+    else if (isShooting)
+    {
+        currentAnim = &shootTextures;
+    }
+
+    // safety Check: Ensure currentFrame isn't out of bounds 
+    // (This prevents crashing if switching animations mid-frame)
+    if (currentFrame >= currentAnim->size()) currentFrame = 0;
+
+    Texture2D currentTexture = (*currentAnim)[currentFrame];
 
     // the part of the image we want to use
     //    x: 0, y: 0, width: image width, height: image height
@@ -144,4 +207,24 @@ Vector2 Player::getPlayerPos()
 float Player::getPlayerRotation()
 {
     return rotation;
+}
+
+void Player::reload()
+{
+    if (!isReloading && currentAmmo < maxAmmo)
+    {
+        isReloading = true;
+        currentFrame = 0;
+        frameTimer = 0.0f;
+    }
+}
+
+bool Player::isReloadingState()
+{
+    return isReloading;
+}
+
+int Player::getAmmo()
+{
+    return currentAmmo;
 }
