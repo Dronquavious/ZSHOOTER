@@ -10,3 +10,9 @@ src/main
 
 # raylib src
 raylib/
+
+# extra
+*.exe
+*.o
+*.a
+*.dll
