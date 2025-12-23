@@ -17,6 +17,7 @@ public:
     Rectangle GetCollisionRect();
     bool takeDamage(int damage);
     bool active; // to check if its dead so we can clean it
+    Vector2 getPosition();
 
 private:
     Vector2 position;

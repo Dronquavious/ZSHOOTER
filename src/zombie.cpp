@@ -175,3 +175,8 @@ bool Zombie::takeDamage(int damage)
     }
     return false;       // "still alive"
 }
+
+Vector2 Zombie::getPosition()
+{
+    return position;
+}

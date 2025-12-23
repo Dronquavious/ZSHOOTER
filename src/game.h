@@ -7,6 +7,16 @@
 #include "zombie.h"
 #include <vector>
 
+struct Decal {
+    Vector2 position;
+    float rotation;
+    float scale;
+    Texture2D texture;
+    float lifeTime; 
+    float maxLife;  
+    bool onTop;
+};
+
 class Game
 {
 public:
@@ -24,6 +34,7 @@ private:
     Player player;                 // game owns player
     std::vector<Bullet> bullets;   // game owns bullets
     std::vector<Zombie *> zombies; // game owns zombies
+    std::vector<Decal> decals;
     Texture2D backgroundTexture;
 
     // Shooting Settings
@@ -31,6 +42,7 @@ private:
     float fireRate;
     float gunOffset;
     float sideOffset;
+    float noAmmoTimer;
 
     // cam
     Camera2D camera;
@@ -38,7 +50,10 @@ private:
     // zomb
     float zombieSpawnTimer;
     float zombieSpawnRate;
-    
+    Texture2D muzzleFlashTexture; // bullet
+    Texture2D hitTexture;         // blood
+    Texture2D deadBodyTexture;    // blood spray
+    // Texture2D shellTexture;
 };
 
 #endif

@@ -8,11 +8,17 @@ Game::Game()
 
     backgroundTexture = LoadTexture("assets/map/backround.png");
 
+    muzzleFlashTexture = LoadTexture("assets/effects/bullet2.png"); // the flash
+    hitTexture = LoadTexture("assets/effects/blood.png");           // the hit splat
+    deadBodyTexture = LoadTexture("assets/effects/bloodspray.png");
+    gameOver = false;
+
     // init shooting vars
     shootTimer = 0.0f;
     fireRate = 0.2f;
     gunOffset = 35.0f;
     sideOffset = 15.0f;
+    noAmmoTimer = 0.0f;
 
     // camera
     camera.offset = {1280.0f / 2.0f, 720.0f / 2.0f};
@@ -37,6 +43,9 @@ Game::~Game()
     zombies.clear();
 
     UnloadTexture(backgroundTexture);
+    UnloadTexture(muzzleFlashTexture);
+    UnloadTexture(hitTexture);
+    UnloadTexture(deadBodyTexture);
 }
 
 void Game::run()
@@ -66,6 +75,19 @@ void Game::update()
     }
 
     float dt = GetFrameTime();
+
+    // --- UPDATE DECALS (Fade them out) ---
+    for (int i = 0; i < decals.size(); i++)
+    {
+        decals[i].lifeTime -= dt;
+
+        if (decals[i].lifeTime <= 0)
+        {
+            decals.erase(decals.begin() + i);
+            i--;
+        }
+    }
+
     shootTimer += dt;
 
     Vector2 mouseWorldPos = GetScreenToWorld2D(GetMousePosition(), camera);
@@ -117,6 +139,19 @@ void Game::update()
             float spawnX = pPos.x + (forward.x * gunOffset) + (right.x * sideOffset);
             float spawnY = pPos.y + (forward.y * gunOffset) + (right.y * sideOffset);
 
+            // --- SPAWN MUZZLE FLASH ---
+            Decal flash;
+            float extraPush = 20.0f; 
+            flash.position.x = spawnX + (forward.x * extraPush);
+            flash.position.y = spawnY + (forward.y * extraPush);
+            flash.onTop = true;
+            flash.rotation = rot;
+            flash.scale = 0.15f;
+            flash.texture = muzzleFlashTexture;
+            flash.lifeTime = 0.05f; // fast flash
+            flash.maxLife = 0.05f;
+            decals.push_back(flash);
+
             bullets.push_back(Bullet(spawnX, spawnY, rot));
         }
     }
@@ -124,6 +159,22 @@ void Game::update()
     for (Bullet &b : bullets)
     {
         b.update();
+    }
+
+    // --- NO AMMO LOGIC ---
+    // decrease the timer if it's running
+    if (noAmmoTimer > 0.0f)
+    {
+        noAmmoTimer -= dt;
+    }
+
+    // check if player tries to shoot with empty mag
+    if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
+    {
+        if (player.getAmmo() <= 0 && !player.isReloadingState())
+        {
+            noAmmoTimer = 0.5f; // Show text for 0.5 seconds
+        }
     }
 
     // --- COLLISION LOGIC (Bullet vs Zombie) ---
@@ -147,7 +198,22 @@ void Game::update()
                 // HIT!
                 z->takeDamage(35); // zombie takes damage
                 b.active = false;  // bullet is destroyed
-                break;             // bullet can only hit one zombie!
+                // ---  SPAWN BLOOD SPLAT ---
+                Decal blood;
+                blood.onTop = false;
+                // need to access zombie position directly.
+                // since Zombie::position is private, use z->GetCollisionRect() center for now
+                Rectangle zRect = z->GetCollisionRect();
+                blood.position = {zRect.x + zRect.width / 2, zRect.y + zRect.height / 2};
+
+                blood.rotation = (float)GetRandomValue(0, 360);
+                blood.scale = 0.5f;
+                blood.texture = hitTexture;
+                blood.lifeTime = 2.0f;
+                blood.maxLife = 2.0f;
+                decals.push_back(blood);
+
+                break; // bullet can only hit one zombie!
             }
         }
     }
@@ -173,6 +239,36 @@ void Game::update()
     {
         if (!(*it)->active) // if zombie is dead
         {
+            // --- SPAWN DEAD BODY ---
+            Decal body;
+            body.onTop = false;
+
+            // get Zombie Center (The safest way)
+            Rectangle zRect = (*it)->GetCollisionRect();
+            Vector2 zPos = {zRect.x + zRect.width / 2, zRect.y + zRect.height / 2};
+            Vector2 pPos = player.getPlayerPos();
+
+            // calculate Direction (From Player -> To Zombie)
+            float dx = zPos.x - pPos.x;
+            float dy = zPos.y - pPos.y;
+            float angleRad = atan2(dy, dx);
+            float angleDeg = angleRad * RAD2DEG;
+
+            // offset: Start at Zombie and move 60 pixels "Behind" them
+            // (Continuing the line from the player)
+            body.position.x = zPos.x + (cos(angleRad) * 60.0f);
+            body.position.y = zPos.y + (sin(angleRad) * 60.0f);
+
+            // rotation and Size
+            body.rotation = angleDeg;
+            body.scale = 0.15f; // splatter tweaked size
+
+            body.texture = deadBodyTexture;
+            body.lifeTime = 60.0f;
+            body.maxLife = 60.0f;
+            decals.push_back(body);
+            // --------------------------
+
             delete *it;             // delete the memory
             it = zombies.erase(it); // remove from list & update iterator
         }
@@ -220,11 +316,47 @@ void Game::draw()
         DrawRectangle(startX, startY, mapSize, mapSize, DARKGRAY);
     }
 
+    // loop ground stuff
+    for (Decal &d : decals)
+    {
+        if (d.onTop)
+            continue; // skip flashes for now
+
+        float alpha = d.lifeTime / d.maxLife;
+        if (alpha > 1.0f)
+            alpha = 1.0f;
+        Color tint = Fade(WHITE, alpha);
+
+        Rectangle source = {0, 0, (float)d.texture.width, (float)d.texture.height};
+        Rectangle dest = {d.position.x, d.position.y, d.texture.width * d.scale, d.texture.height * d.scale};
+        Vector2 origin = {dest.width / 2, dest.height / 2};
+
+        DrawTexturePro(d.texture, source, dest, origin, d.rotation, tint);
+    }
+
     player.draw();
 
     for (Zombie *z : zombies)
     {
         z->draw();
+    }
+
+    // loop ontop stuff
+    for (Decal &d : decals)
+    {
+        if (!d.onTop)
+            continue; // Skip ground stuff!
+
+        float alpha = d.lifeTime / d.maxLife;
+        if (alpha > 1.0f)
+            alpha = 1.0f;
+        Color tint = Fade(WHITE, alpha);
+
+        Rectangle source = {0, 0, (float)d.texture.width, (float)d.texture.height};
+        Rectangle dest = {d.position.x, d.position.y, d.texture.width * d.scale, d.texture.height * d.scale};
+        Vector2 origin = {dest.width / 2, dest.height / 2};
+
+        DrawTexturePro(d.texture, source, dest, origin, d.rotation, tint);
     }
 
     for (Bullet &b : bullets)
@@ -234,34 +366,48 @@ void Game::draw()
 
     EndMode2D();
 
-    // UI HERE (Score, Ammo) FOR TESTING
+    // UI HERE
     if (gameOver)
     {
-        // the text and size
         const char *titleText = "GAME OVER";
         int titleFontSize = 80;
-
         const char *subText = "Press ENTER to Restart";
         int subFontSize = 30;
-
-        // measure widths
         int titleWidth = MeasureText(titleText, titleFontSize);
         int subWidth = MeasureText(subText, subFontSize);
-
-        // draw centered (ScreenCenter - HalfTextWidth)
         DrawText(titleText, (1280 / 2) - (titleWidth / 2), (720 / 2) - 60, titleFontSize, RED);
         DrawText(subText, (1280 / 2) - (subWidth / 2), (720 / 2) + 40, subFontSize, DARKGRAY);
     }
     else
     {
-        // Normal UI
+        // draw Health (Top Left)
         DrawText(TextFormat("Health: %i", player.getHealth()), 20, 20, 20, RED);
 
-        // create the string "Ammo: X / 30"
+        // draw Ammo (Below Health)
         std::string ammoText = "Ammo: " + std::to_string(player.getAmmo()) + " / 30";
-
-        // draw it in yellow just below the health
         DrawText(ammoText.c_str(), 20, 50, 20, YELLOW);
+
+        // RELOAD TEXT (Big, Center Bottom)
+        if (player.isReloadingState())
+        {
+            const char *reloadText = "RELOADING...";
+            int fontSize = 40;
+            int textWidth = MeasureText(reloadText, fontSize);
+
+            // draw at horizontal center, near the bottom (Y = 600)
+            DrawText(reloadText, (1280 / 2) - (textWidth / 2), 600, fontSize, RED);
+        }
+
+        // NO AMMO POPUP (Center Screen)
+        if (noAmmoTimer > 0.0f)
+        {
+            const char *emptyText = "NO AMMO!";
+            int fontSize = 50;
+            int textWidth = MeasureText(emptyText, fontSize);
+
+            // draw right in the middle of the screen
+            DrawText(emptyText, (1280 / 2) - (textWidth / 2), (720 / 2) - 100, fontSize, RED);
+        }
     }
 
     EndDrawing();
@@ -278,6 +424,7 @@ void Game::resetGame()
 
     // Delete all bullets
     bullets.clear();
+    decals.clear();
 
     // Spawn a new test zombie
     zombies.push_back(new Zombie(400, 400));
