@@ -11,15 +11,18 @@ public:
     Zombie(float x, float y);
     ~Zombie();
 
-    void update(Vector2 playerPos);
+    void update(Vector2 playerPos, std::vector<Zombie*>& zombies);
     void draw();
     Rectangle GetCollisionRect();
+    bool takeDamage(int damage);
+    bool active; // to check if its dead so we can clean it
 
 private:
     Vector2 position;
     float speed;
     float rotation;
     float scale;
+    int health;
 
     // ANIM DATA
     std::vector<Texture2D> walkTextures;

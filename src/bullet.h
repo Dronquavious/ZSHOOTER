@@ -16,9 +16,9 @@ public:
     void draw();
 
     bool active;
+    Vector2 position;
 
 private:
-    Vector2 position;
     float speed;
     float rotation;
     

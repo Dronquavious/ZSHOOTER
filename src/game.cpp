@@ -12,7 +12,6 @@ Game::Game()
     gunOffset = 35.0f;
     sideOffset = 15.0f;
 
-
     // camera
     camera.offset = {1280.0f / 2.0f, 720.0f / 2.0f};
     camera.target = player.getPlayerPos();
@@ -20,12 +19,17 @@ Game::Game()
     camera.zoom = 2.0f;
 
     // Zombie TEST
+    zombies.push_back(new Zombie(400.0f, 400.0f));
+    zombies.push_back(new Zombie(300.0f, 300.0f));
     zombies.push_back(new Zombie(500.0f, 500.0f));
+    zombies.push_back(new Zombie(100.0f, 100.0f));
+    zombies.push_back(new Zombie(200.0f, 200.0f));
+    
 }
 
 Game::~Game()
 {
-    for (Zombie* z : zombies)
+    for (Zombie *z : zombies)
     {
         delete z;
     }
@@ -81,10 +85,35 @@ void Game::update()
         b.update();
     }
 
-    // zombies
-    for (Zombie* z : zombies)
+    // --- COLLISION LOGIC (Bullet vs Zombie) ---
+    for (Bullet &b : bullets)
     {
-        z->update(player.getPlayerPos());
+        if (!b.active)
+            continue; // skip dead bullets
+
+        for (Zombie *z : zombies)
+        {
+            if (!z->active)
+                continue; // skip dead zombies
+
+            // check Collision
+            if (CheckCollisionCircleRec(
+                    {b.position.x, b.position.y}, // Bullet Pos
+                    5,                            // Bullet Radius
+                    z->GetCollisionRect()         // Zombie Box
+                    ))
+            {
+                // HIT!
+                z->takeDamage(35); // zombie takes damage
+                b.active = false;  // bullet is destroyed
+                break;             // bullet can only hit one zombie!
+            }
+        }
+    }
+
+    for (Zombie *z : zombies)
+    {
+        z->update(player.getPlayerPos(), zombies);
     }
 
     // --- DELETE DEAD BULLETS ---
@@ -97,7 +126,20 @@ void Game::update()
     // CAMERA LOGIC
     camera.target = player.getPlayerPos();
 
-
+    // --- DELETE DEAD ZOMBIES ---
+    auto it = zombies.begin();
+    while (it != zombies.end())
+    {
+        if (!(*it)->active) // if zombie is dead
+        {
+            delete *it;             // delete the memory
+            it = zombies.erase(it); // remove from list & update iterator
+        }
+        else
+        {
+            ++it; // move to next zombie
+        }
+    }
 }
 
 void Game::draw()
@@ -113,10 +155,10 @@ void Game::draw()
 
     player.draw();
 
-    for (Zombie* z : zombies)
-        {
-            z->draw();
-        }
+    for (Zombie *z : zombies)
+    {
+        z->draw();
+    }
 
     for (Bullet &b : bullets)
     {

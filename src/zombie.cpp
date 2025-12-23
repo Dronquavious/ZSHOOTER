@@ -10,6 +10,8 @@ Zombie::Zombie(float x, float y)
     rotation = 0.0f;
     scale = 0.25f;
     isAttacking = false;
+    health = 140;
+    active = true;
 
     currentFrame = 0;
     frameTimer = 0.0f;
@@ -55,7 +57,7 @@ Zombie::~Zombie()
     }
 }
 
-void Zombie::update(Vector2 playerPos)
+void Zombie::update(Vector2 playerPos, std::vector<Zombie*>& zombies)
 {
     float dt = GetFrameTime();
 
@@ -84,6 +86,30 @@ void Zombie::update(Vector2 playerPos)
     {
         // we are close start attacking
         isAttacking = true;
+    }
+
+    // --- SEPARATION LOGIC (The Shove) ---
+    for (Zombie* other : zombies)
+    {
+        // dont check against yourself, and dont check dead zombies
+        if (other == this || !other->active) continue;
+
+        float sdx = position.x - other->position.x;
+        float sdy = position.y - other->position.y;
+        float sDist = sqrt(sdx*sdx + sdy*sdy);
+
+        // if they are inside our "Personal Space" (30 pixels)
+        if (sDist < 30.0f)
+        {
+            // calculate a vector pointing AWAY from them
+            // normalize it (so we push evenly)
+            float pushX = sdx / sDist;
+            float pushY = sdy / sDist;
+
+            // push ourselves away (Move slightly faster than walk speed to resolve overlaps)
+            position.x += pushX * 50.0f * dt;
+            position.y += pushY * 50.0f * dt;
+        }
     }
 
     // --- ANIM LOGIC ---
@@ -129,4 +155,15 @@ Rectangle Zombie::GetCollisionRect()
 {
     // a simple box centered on the zombie
     return { position.x - 20, position.y - 20, 40, 40 };
+}
+
+bool Zombie::takeDamage(int damage)
+{
+    health -= damage;
+    if (health <= 0)
+    {
+        active = false; // mark for deletion
+        return true;    // "I died"
+    }
+    return false;       // "still alive"
 }
